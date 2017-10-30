@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+<title>Print Stream File Modifier</title>
+
+
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" />
+
+</head>
+<body>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-sm-6" style="padding-left: 80px;">
+				<h2 class="lead"></h2>
+				<br /> <br />
+				<h2>Print Stream File Modifier on PJL Headers</h2>
+				<p class="text-secondary">Please click the button to check if pjl files exist in the directory</p>
+				<button type="button" class="btn btn-primary" onclick="location.href='/checkDirectory'" name="btnCheckDirectory" id="btnCheckDirectory">Check Directory</button>
+				<br /> <br />
+				
+				<form action="#" th:action="@{/displayHeaders}" method="post">
+				<div th:if="${pjlFilesSelected != null}">
+				<table class="table table-striped" id="tableDisplay">
+					<thead>
+					<tr>
+						<th>Files</th>
+					</tr>
+					</thead>
+					<tbody>
+					<tr th:each="pjlFile: ${pjlFilesSelected}">
+						<td style="padding-left: 30px;">
+							<input class="form-check-input" type="checkbox" name="pjlFile" id="pjlFile" th:value="${pjlFile.id}" th:checked="${#strings.equals(pjlFile.value,'checked')}"/>
+							<label th:text="${pjlFile.id}" class="form-check-label"></label>						
+						</td>
+					</tr>
+					<tr><td></td></tr>					
+					</tbody>					
+				</table>
+				
+				<button type="submit" class="btn btn-primary" onclick="location.href='/displayHeaders'" name="btnDisplayHeaders" id="btnDisplayHeaders">Display Headers</button>				
+				</div>
+				</form>
+			</div>
+			<div class="col-sm-1"></div>
+			<form id="updateHeaders" action="#" th:action="@{/updateHeaders}" method="post">
+				<div class="col-sm-12" th:if="${mappedHeader != null}">
+					<br />
+					<h2 class="lead"></h2>
+					<br /> <br />
+
+					<div class="form-group">
+						<select class="form-control" id="pjlHeaders">
+							<option value="">Select Header</option>
+							<option th:each="item: ${mappedHeader}" th:value="${item['value']}" th:text="${item['key']}"></option>
+						</select>
+					</div>
+					<br />
+					<div class="form-group">
+						<input type="text" class="form-control" id="inputHeaderNewValue" name="inputHeaderNewValue"/>
+						<input type="hidden" class="form-control" id="inputHeaderKey" name="inputHeaderKey" value=""/>
+						<input type="hidden" class="form-control" id="checkedBoxValue" name="checkedBoxValue" value=""/>
+						<input type="hidden" class="form-control" id="successValue" name="successValue" value=""/>
+					</div>
+					<br />
+					<button type="button" class="btn btn-primary" id="btnUpdateHeaders">Update Headers</button>
+					<br/><br/>					
+					<span class="text-danger" id="errorHeader"></span>					
+					<span class="text-success" id="successHeader" th:if="${success != null}" th:text="${success}"></span>
+				</div>
+			</form>
+		</div>
+	</div>
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.6/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
+
+<script>
+	$(document).ready(function() {
+		$('#pjlHeaders').on('change', function() {
+			$('#errorHeader').text('');
+			$('#inputHeaderNewValue').val(this.value);
+			$('#inputHeaderKey').val($(this).find('option:selected').text());
+		})
+		
+		$("#btnUpdateHeaders").click(function() {
+		var pjlFileList = [];
+		$.each($("input[name='pjlFile']:checked"), function() {
+			pjlFileList.push($(this).val());
+		});
+		
+		$('#checkedBoxValue').val(pjlFileList.join()); 
+		//alert("List of files are: " + pjlFileList.join());
+		
+		if ($('#pjlHeaders').val() == ''){
+			$('#successHeader').text('');
+			$('#errorHeader').text('Please select a header from the dropdown list');
+		} else {
+			$('#successValue').val('Header Successfully Updated');
+			$("#updateHeaders").submit();			
+		}
+		}); 	
+	});
+</script>
+
+</body>
+</html>
