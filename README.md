@@ -8,11 +8,11 @@ Once repository is cloned, import as a maven project into your IDE (with Spring 
 
 Run the test suite class (TestSuiteClass.java)
 
-Run the project as a Spring Boot App or run PrintstreamApplication.java as a Java application. Alternatively, please build the project using mvn package and deploy the war file in your local Tomcat repository.
+Run the project as a Spring Boot App or run PrintstreamApplication.java as a Java application. Alternatively, please build the project using mvn install or mvn package and deploy the war file (rename to printstream.war) in the webapps folder of your local Tomcat repository.
 
 ### Navigating the application
 
-1. If project is run in IDE open http://localhost:8080/home to a browser. This should take you to the home page
+1. If project is run in IDE open http://localhost:8080/home to a browser. Otherwise, if project is deployed in a standalone Tomcat server access it at http://localhost:8080/printstream/home. This should take you to the home page
 
 <img width="611" alt="screen shot 2017-10-31 at 7 29 49 am" src="https://user-images.githubusercontent.com/33222508/32194047-59a52e8c-be0d-11e7-80f8-3b0ea5b2731f.png">
 
@@ -32,4 +32,4 @@ Run the project as a Spring Boot App or run PrintstreamApplication.java as a Jav
 
 5. Update headers and output file (e.g new_sample1.pjl) should be created inside the directory where you have imported the project.
 
-   E.g: /Users/kenlegaspi/RICOH/ricoh-assessment/src/test/output
+   E.g: /Users/kenlegaspi/RICOH/ricoh-assessment/**src/test/output**
