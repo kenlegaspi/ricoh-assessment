@@ -26,9 +26,7 @@ Run the project as a Spring Boot App or run PrintstreamApplication.java as a Jav
 
 4. Please select USERID from the dropdown list. It should display the current value from the file. Update the value as needed.
 
-<img width="345" alt="screen shot 2017-10-31 at 7 16 31 am" src="https://user-images.githubusercontent.com/33222508/32193461-73cb028e-be0b-11e7-8823-61d83ba1267a.png">
-
-### NOTE: Although all possible PJL headers are displayed, for now only those with corresponding values enclosed in "" are appropriately updated.  e.g. USERID, HOSTPRINTERNAME, AUTHENTICATIONUSERNAME,BILLINGCODE, USERCODE, etc.
+<img width="357" alt="updateheader" src="https://user-images.githubusercontent.com/33222508/32208874-74d91546-be59-11e7-8aef-99bc475d0d71.png">
 
 5. Update headers and output file (e.g new_sample1.pjl) should be created inside the directory where you have imported the project.
 
