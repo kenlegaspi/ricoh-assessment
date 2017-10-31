@@ -166,7 +166,7 @@ public class RetrieveJPLFilesServiceTest {
 		
 		Map<String, String> mappedHeaderValues = retrieveService.displayHeaderValues(fileOutputArray);
 				
-		assertEquals("\"GUEST 123\"", mappedHeaderValues.get("USERID").toString());
+		assertEquals("GUEST 123", mappedHeaderValues.get("USERID").toString());
 		assertEquals(5, files.size());
 	}
 	

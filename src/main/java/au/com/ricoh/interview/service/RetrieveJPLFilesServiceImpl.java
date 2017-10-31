@@ -110,7 +110,7 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 					String matched = m.group();
 
 					mappedHeader.put(matched.split("=")[0].split(" ")[2],
-							matched.split("=")[1].replaceFirst("^\\s+", ""));
+							matched.split("=")[1].replaceFirst("^\\s+", "").replaceAll("\"", ""));					
 				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -168,6 +168,13 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 						int start = matched.indexOf("\"");
 						int end = matched.lastIndexOf("\"");
 
+						newStringValue.append(matched.substring(0, start + 1));
+						newStringValue.append(inputHeaderNewValue);
+						newStringValue.append(matched.substring(end, matched.length()));
+					} else {
+						int start = matched.indexOf("=") + 1;
+						int end = matched.length();
+							
 						newStringValue.append(matched.substring(0, start + 1));
 						newStringValue.append(inputHeaderNewValue);
 						newStringValue.append(matched.substring(end, matched.length()));
