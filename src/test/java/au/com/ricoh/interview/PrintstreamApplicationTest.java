@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.assertj.core.util.Arrays;
@@ -53,7 +54,7 @@ public class PrintstreamApplicationTest {
 
 	@Test
 	public void testCheckDirectory() throws Exception {
-		File[] fileNames = Arrays.array(first, second);
+		List<File> fileNames = java.util.Arrays.asList(first, second);
 
 		Value firstValue = new ValueBuilder().withId(first.getName()).withValue("unchecked").build();
 		Value secondValue = new ValueBuilder().withId(second.getName()).withValue("unchecked").build();

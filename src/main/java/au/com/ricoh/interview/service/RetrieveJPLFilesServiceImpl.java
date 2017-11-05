@@ -9,12 +9,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,31 +36,39 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 	ApplicationConfiguration appConfig;
 
 	@Override
-	public File[] retrievePJLFiles(String directoryPath) {
+	public List<File> retrievePJLFiles(List<String> directoryPath) {
+		List<File> fileArray = new ArrayList<File>();
 
-		log.info("Input files found at: " + directoryPath);
+		for (String filePath : directoryPath) {
 
-		File directory = new File(directoryPath);
-		File[] fileArray = null;
+			log.info("Input files found at: " + filePath);
 
-		if (!directory.isDirectory()) {
-			directory.mkdir();
+			File directory = new File(filePath);
 
-			log.info("Input File Directory Created at: " + directory.toString());
-		} else {
-			fileArray = directory.listFiles();
+			if (!directory.isDirectory()) {
+				directory.mkdir();
+
+				log.info("Input File Directory Created at: " + directory.toString());
+			} else {
+				fileArray.addAll(Arrays.asList(directory.listFiles()).stream().filter(f -> f.getName().contains(".pjl"))
+						.collect(Collectors.toList()));
+			}
 		}
 
+		if (fileArray.size() > 0) {
+			Collections.sort(fileArray);
+		}
+		
 		return fileArray;
 	}
 
 	@Override
-	public List<Value> getFileNames(File[] pjlFiles) {
+	public List<Value> getFileNames(List<File> pjlFiles) {
 		List<Value> fileNames = new ArrayList<>();
 
-		for (int i = 0; i < pjlFiles.length; i++) {
-			if (pjlFiles[i].getName().contains(".pjl")) {
-				fileNames.add(new Value(pjlFiles[i].getName(), AppConstants.UNCHECKED));
+		for (File f : pjlFiles) {
+			if (f.getName().contains(".pjl")) {
+				fileNames.add(new Value(f.getName(), AppConstants.UNCHECKED));
 			}
 		}
 
@@ -66,7 +76,7 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 	}
 
 	@Override
-	public List<Value> getSelectedFileNames(String[] selectedFiles, List<Value> pjlFilesSelected) {
+	public List<Value> getSelectedFileNames(List<String> selectedFiles, List<Value> pjlFilesSelected) {
 		Map<String, String> mappedKeys = new HashMap<String, String>();
 
 		for (String s : selectedFiles) {
@@ -91,7 +101,7 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 	}
 
 	@Override
-	public Map<String, String> displayHeaderValues(File[] fileNameArray) {
+	public Map<String, String> displayHeaderValues(List<File> fileNameArray, boolean multipleFiles) {
 		Map<String, String> mappedHeader = new LinkedHashMap<String, String>();
 
 		for (File f : fileNameArray) {
@@ -109,8 +119,15 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 				while (m.find()) {
 					String matched = m.group();
 
-					mappedHeader.put(matched.split("=")[0].split(" ")[2],
-							matched.split("=")[1].replaceFirst("^\\s+", "").replaceAll("\"", ""));					
+					String header = matched.split("=")[0].split(" ")[2];
+					String value = matched.split("=")[1].replaceFirst("^\\s+", "").replaceAll("\"", "");
+					
+					if (!multipleFiles) {
+						mappedHeader.put(header, value);											
+					} else {
+						mappedHeader.put(header, "");
+					}
+					
 				}
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
@@ -127,35 +144,36 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 
 		String outputPath = appConfig.getUserDirectory() + AppConstants.FILE_OUTPUTS;
 
-		File directory = new File(outputPath);
-
-		if (!directory.isDirectory()) {
-			directory.mkdir();
-
-			log.info("Output File Directory Created at: " + directory.toString());
-		} else {
-			log.info("Output files found at: " + outputPath);
-		}
+		createDirectoryPath(outputPath);
 
 		for (Value files : pjlFilesSelected) {
 			if (files.getValue() == AppConstants.CHECKED) {
 
-				File pjlFile = new File(appConfig.getUserDirectory() + AppConstants.FILE_SAMPLES + "/" + files.getId());
-				File newfile = new File(
-						appConfig.getUserDirectory() + AppConstants.FILE_OUTPUTS + "/" + "new_" + files.getId());
+				String outputFileDirectory = appConfig.getUserDirectory() + AppConstants.FILE_OUTPUTS + "/";
+				String inputFileDirectory = appConfig.getUserDirectory() + AppConstants.FILE_SAMPLES + "/";
+				String processedFileDirectory = appConfig.getUserDirectory() + AppConstants.FILE_PROCESSED + "/";
+						
+				File inputFile, outputfile, processedFile = null;
+						
+				if (files.getId().contains(AppConstants.NEW)) {
+					inputFile = new File(outputFileDirectory + files.getId());
+					outputfile = new File(outputFileDirectory + "temp_" + files.getId());
+				} else {
+					inputFile = new File(inputFileDirectory + files.getId());
+					outputfile = new File(outputFileDirectory + AppConstants.NEW +  files.getId());
+					processedFile = new File(processedFileDirectory + files.getId());
+				}
+				
+				try (FileInputStream fis = new FileInputStream(inputFile); FileOutputStream fop = new FileOutputStream(outputfile);) {
 
-				try (FileInputStream fis = new FileInputStream(pjlFile);
-						FileOutputStream fop = new FileOutputStream(newfile)) {
+					byte[] inputFileInBytes = new byte[(int) inputFile.length()];
 
-					byte[] buffer = new byte[(int) pjlFile.length()];
+					fis.read(inputFileInBytes);
 
-					fis.read(buffer);
-
-					String sourceString = new String(buffer, StandardCharsets.UTF_8);
+					String sourceString = new String(inputFileInBytes, StandardCharsets.UTF_8);
 
 					Pattern pattern = Pattern.compile(inputHeaderKey + ".*\n*");
 					Matcher match = pattern.matcher(sourceString);
-
 					String matched = "";
 
 					while (match.find()) {
@@ -163,40 +181,21 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 					}
 
 					StringBuilder newStringValue = new StringBuilder();
-
+					int start, end;
+					
 					if (matched.contains("\"")) {
-						int start = matched.indexOf("\"");
-						int end = matched.lastIndexOf("\"");
-
-						newStringValue.append(matched.substring(0, start + 1));
-						newStringValue.append(inputHeaderNewValue);
-						newStringValue.append(matched.substring(end, matched.length()));
+						start = matched.indexOf("\"");
+						end = matched.lastIndexOf("\"");
 					} else {
-						int start = matched.indexOf("=") + 1;
-						int end = matched.length();
-							
-						newStringValue.append(matched.substring(0, start + 1));
-						newStringValue.append(inputHeaderNewValue);
-						newStringValue.append(matched.substring(end, matched.length()));
+						start = matched.indexOf("=") + 1;
+						end = matched.length();							
 					}
 
-					int startIndex = sourceString.indexOf(matched);
+					createOutputFileWithNewValue(inputHeaderNewValue, fop, inputFileInBytes, sourceString, matched, newStringValue,
+							start, end);
 
-					byte[] firstPartOfBytes = Arrays.copyOfRange(buffer, 0, startIndex);
-					byte[] byteArrayToReplace = new byte[newStringValue.length()];
-					byte[] lastPartOfBytes = Arrays.copyOfRange(buffer, startIndex + matched.length(), buffer.length);
-
-					byteArrayToReplace = newStringValue.toString().getBytes();
-
-					ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-					output.write(firstPartOfBytes);
-					output.write(byteArrayToReplace);
-					output.write(lastPartOfBytes);
-
-					byte[] out = output.toByteArray();
-
-					fop.write(out);
+					updateExistingFiles(inputFile, outputfile, processedFile, inputFileInBytes);
+					
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -205,10 +204,103 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 		}
 	}
 
+	private void createOutputFileWithNewValue(String inputHeaderNewValue, FileOutputStream fop, byte[] inputFileInBytes,
+			String sourceString, String matched, StringBuilder newStringValue, int start, int end) throws IOException {
+		
+		newStringValue.append(matched.substring(0, start + 1));
+		newStringValue.append(inputHeaderNewValue);
+		newStringValue.append(matched.substring(end, matched.length()));
+
+		int startIndex = sourceString.indexOf(matched);
+
+		byte[] firstPartOfBytes = Arrays.copyOfRange(inputFileInBytes, 0, startIndex);
+		byte[] byteArrayToReplace = new byte[newStringValue.length()];
+		byte[] lastPartOfBytes = Arrays.copyOfRange(inputFileInBytes, startIndex + matched.length(), inputFileInBytes.length);
+
+		byteArrayToReplace = newStringValue.toString().getBytes();
+
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+		output.write(firstPartOfBytes);
+		output.write(byteArrayToReplace);
+		output.write(lastPartOfBytes);
+
+		byte[] out = output.toByteArray();
+
+		fop.write(out);
+	}
+
+	private void updateExistingFiles(File inputFile, File outputfile, File processedFile, byte[] inputFileInBytes)
+			throws FileNotFoundException, IOException {
+		
+		if (outputfile.getName().contains("temp")) {
+			outputfile.renameTo(inputFile);
+		} else {
+			FileOutputStream pr = new FileOutputStream(processedFile);
+			pr.write(inputFileInBytes);
+			inputFile.delete();
+			pr.close();
+		}
+	}
+
 	@Override
-	public String getDirectoryPath() {
-		String directoryPath = appConfig.getUserDirectory() + AppConstants.FILE_SAMPLES;
+	public String getDirectoryPath(String path) {
+		String directoryPath = appConfig.getUserDirectory() + path;
 		
 		return directoryPath;
+	}
+	
+	@Override
+	public void createDirectoryPath(String path) {
+		File directory = new File(path);
+
+		if (!directory.isDirectory()) {
+			directory.mkdir();
+
+			log.info("Directory Created at: " + directory.toString());
+		}		
+	}
+	
+	@Override
+	public List<String> getInputDirectories(){
+		List<String> directoryPaths = new ArrayList<String>();
+
+		directoryPaths.add(getDirectoryPath(AppConstants.FILE_SAMPLES));
+		directoryPaths.add(getDirectoryPath(AppConstants.FILE_OUTPUTS));
+		
+		return directoryPaths;
+	}
+	
+	@Override
+	public File getFile(String filename, List<File> fileNameArray) {
+		File existingFile = null;
+		
+		for (File f : fileNameArray){
+			if (f.getName().equals(filename)) {
+				existingFile = f;
+			}
+		}
+			
+		return existingFile;
+	}
+
+	@Override
+	public List<Value> updateCheckedFiles(List<String> selectedFiles, List<Value> pjlFilesSelected) {
+
+		Map<String, String> mappedKeys = new HashMap<String, String>();
+
+		for (String s : selectedFiles) {
+			mappedKeys.put(s, s);
+		}
+
+		for (Value v : pjlFilesSelected) {
+			if (mappedKeys.containsKey(v.getId()) && v.getValue().equals(AppConstants.CHECKED)) {
+				if (!v.getId().contains(AppConstants.NEW)) {
+					v.setId(AppConstants.NEW + v.getId());
+				}
+			}				
+		}
+
+		return pjlFilesSelected;
 	}
 }

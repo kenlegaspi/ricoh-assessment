@@ -1,5 +1,25 @@
 @charset "UTF-8";
 
+.form-check-label {
+	text-decoration: underline;
+}
+
 .spacer {
     margin:20px 50px 50px 50px !important;
 }
+
+.table-hover thead tr:hover th{
+    background-color: white;
+}
+
+.table-hover tbody tr td:hover {
+    background-color: #007bff;
+}
+
+.table-hover tbody tr td:hover .form-check-label{
+    color: white;
+}
+
+.tooltip.primary .tooltip-inner          { background-color:    #E0E0E0; color : #404040; opacity: 0.8}
+.tooltip.primary.right > .tooltip-arrow  { background-color:    #E0E0E0; border-right-color:  #E0E0E0; }
+.tooltip.primary.left > .tooltip-arrow   { background-color:    #E0E0E0; border-left-color:   #E0E0E0; }

@@ -3,12 +3,14 @@ package au.com.ricoh.interview;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.assertj.core.util.Arrays;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -63,10 +65,13 @@ public class RetrieveJPLFilesServiceTest {
 	}
 	
 	@Test()
-	public void testIfFilesExist() {		
-		String directoryPath = appConfig.getUserDirectory() + AppConstants.FILE_SAMPLES;
+	public void testIfFilesExist() {				
+		List<String> directoryPaths = new ArrayList<String>();
 		
-		File fileArray[] = retrieveService.retrievePJLFiles(directoryPath);
+		directoryPaths.add(retrieveService.getDirectoryPath(AppConstants.FILE_SAMPLES));    			
+		directoryPaths.add(retrieveService.getDirectoryPath(AppConstants.FILE_OUTPUTS));
+		
+		List<File> fileArray = retrieveService.retrievePJLFiles(directoryPaths);
 	
 		for (File f : fileArray) {
 			if (!f.isDirectory()) {
@@ -79,7 +84,7 @@ public class RetrieveJPLFilesServiceTest {
 
 	@Test()
 	public void testGetFileNames() {		
-		List<Value> files = retrieveService.getFileNames(Arrays.array(firstFile, secondFile));
+		List<Value> files = retrieveService.getFileNames(java.util.Arrays.asList(firstFile, secondFile));
 		
 		assertEquals("file1.pjl", files.get(0).getId());
 		assertEquals("file2.pjl", files.get(1).getId());
@@ -88,7 +93,7 @@ public class RetrieveJPLFilesServiceTest {
 
 	@Test()
 	public void testGetPJLFileNamesOnly() {
-		List<Value> files = retrieveService.getFileNames(Arrays.array(firstFile, secondFile, thirdFile));
+		List<Value> files = retrieveService.getFileNames(java.util.Arrays.asList(firstFile, secondFile, thirdFile));
 		
 		assertEquals("file1.pjl", files.get(0).getId());
 		assertEquals("file2.pjl", files.get(1).getId());
@@ -104,7 +109,7 @@ public class RetrieveJPLFilesServiceTest {
 		
 		List<Value> pjlFilesSelected = java.util.Arrays.asList(first, second, fourth, fifth);
 		
-		List<Value> filesSelected = retrieveService.getSelectedFileNames(Arrays.array(secondFile.getName(), fifthFile.getName()), pjlFilesSelected);
+		List<Value> filesSelected = retrieveService.getSelectedFileNames(java.util.Arrays.asList(secondFile.getName(), fifthFile.getName()), pjlFilesSelected);
 		
 		assertEquals(4, filesSelected.size());
 		assertEquals("file1.pjl", filesSelected.get(0).getId());
@@ -136,55 +141,103 @@ public class RetrieveJPLFilesServiceTest {
 	
 	@Test()
 	public void testDisplayHeaderValues() {
-		String directoryPath = appConfig.getUserDirectory() + AppConstants.FILE_SAMPLES;
+		List<String> directoryPaths = new ArrayList<String>();
 		
-		File fileArray[] = retrieveService.retrievePJLFiles(directoryPath);
+		directoryPaths.add(retrieveService.getDirectoryPath(AppConstants.FILE_SAMPLES));    			
+		directoryPaths.add(retrieveService.getDirectoryPath(AppConstants.FILE_OUTPUTS));
+
 		
-		Map<String, String> mappedHeaderValues = retrieveService.displayHeaderValues(fileArray);
+		List<File> fileArray = retrieveService.retrievePJLFiles(directoryPaths);
 		
-		assertEquals(true, mappedHeaderValues.containsKey("USERID"));
-		assertEquals(true, mappedHeaderValues.containsKey("AUTHENTICATIONUSERNAME"));
-		assertEquals(true, mappedHeaderValues.containsKey("JOBNAME"));
-		assertEquals(true, mappedHeaderValues.containsKey("HOSTPRINTERNAME"));		
+		Map<String, String> mappedHeaderValues = retrieveService.displayHeaderValues(fileArray, true);
+		
+		if (fileArray.size() > 0) {
+			assertEquals(true, mappedHeaderValues.containsKey("USERID"));
+			assertEquals(true, mappedHeaderValues.containsKey("AUTHENTICATIONUSERNAME"));
+			assertEquals(true, mappedHeaderValues.containsKey("JOBNAME"));
+			assertEquals(true, mappedHeaderValues.containsKey("HOSTPRINTERNAME"));
+			assertEquals(true, mappedHeaderValues.containsKey("PUNCH"));
+			assertEquals(true, mappedHeaderValues.containsKey("COPIES"));
+			assertEquals(true, mappedHeaderValues.containsKey("QTY"));
+			assertEquals(true, mappedHeaderValues.containsKey("DUPLEX"));
+		}
 	}
 		
 	@Test()
 	public void testUpdateHeaderValue() {
 
-		String inputDirectoryPath = appConfig.getUserDirectory() + AppConstants.FILE_SAMPLES;
-		File fileInputputArray[] = retrieveService.retrievePJLFiles(inputDirectoryPath);
+		List<String> directoryPaths = new ArrayList<String>();
+		
+		directoryPaths.add(retrieveService.getDirectoryPath(AppConstants.FILE_SAMPLES));    			
+		directoryPaths.add(retrieveService.getDirectoryPath(AppConstants.FILE_OUTPUTS));
+		
+		List<File> fileInputputArray = retrieveService.retrievePJLFiles(directoryPaths);
 
 		List<Value> files = retrieveService.getFileNames(fileInputputArray);
-
-		files.get(0).setValue(AppConstants.CHECKED);
-		files.get(1).setValue(AppConstants.CHECKED);
 		
-		retrieveService.updateHeaderValues("USERID", "GUEST 123", files);
+		if (files.size() > 0) {
+			files.get(0).setValue(AppConstants.CHECKED);
+			files.get(1).setValue(AppConstants.CHECKED);			
+		}
+			
+		retrieveService.updateHeaderValues("PUNCH", "ON", files);		
 		
-		String outputDirectoryPath = appConfig.getUserDirectory() + AppConstants.FILE_OUTPUTS;
-		File fileOutputArray[] = retrieveService.retrievePJLFiles(outputDirectoryPath);
+		files = retrieveService.updateCheckedFiles(Arrays.asList(files.get(0).getId(), files.get(1).getId()), files);
 		
-		Map<String, String> mappedHeaderValues = retrieveService.displayHeaderValues(fileOutputArray);
+		retrieveService.updateHeaderValues("USERID", "GUEST 123", files);				
+		retrieveService.updateHeaderValues("COPIES", "500", files);
+		retrieveService.updateHeaderValues("QTY", "3295", files);
+		retrieveService.updateHeaderValues("DUPLEX", "OFF", files);		
 				
-		assertEquals("GUEST 123", mappedHeaderValues.get("USERID").toString());
-		assertEquals(5, files.size());
+		String outputDirectoryPath = appConfig.getUserDirectory() + AppConstants.FILE_OUTPUTS;
+		List<File> fileOutputArray = retrieveService.retrievePJLFiles(java.util.Arrays.asList(outputDirectoryPath));
+		
+		Map<String, String> mappedHeaderValues = retrieveService.displayHeaderValues(fileOutputArray, false);
+
+		if (mappedHeaderValues.size() > 0) {
+			assertEquals("GUEST 123", mappedHeaderValues.get("USERID").toString());
+			assertEquals("ON", mappedHeaderValues.get("PUNCH").toString());
+			assertEquals("500", mappedHeaderValues.get("COPIES").toString());
+			assertEquals("3295", mappedHeaderValues.get("QTY").toString());
+			assertEquals("OFF", mappedHeaderValues.get("DUPLEX").toString());
+			assertEquals(5, files.size());
+		}
 	}
 	
 	@Test()
 	public void testGetDirectoryPath() {
-		String s = retrieveService.getDirectoryPath();
+		String input = retrieveService.getDirectoryPath(AppConstants.FILE_SAMPLES);
+		String output = retrieveService.getDirectoryPath(AppConstants.FILE_OUTPUTS);
+		String processed = retrieveService.getDirectoryPath(AppConstants.FILE_PROCESSED);
 		
-		assertEquals(appConfig.getUserDirectory() + "/src/test/samples", s);
+		assertEquals(appConfig.getUserDirectory() + "/src/test/samples", input);
+		assertEquals(appConfig.getUserDirectory() + "/src/test/outputs", output);
+		assertEquals(appConfig.getUserDirectory() + "/src/test/processed", processed);
 	}
 	
 	@Test
-	public void testMatchingPJLFilenames() {
+	public void testMatchingProcessedFilenames() {
 		
-		String directoryPath = appConfig.getUserDirectory() + AppConstants.FILE_SAMPLES;
+		List<String> directoryPaths = new ArrayList<String>();
 		
-		File fileArray[] = retrieveService.retrievePJLFiles(directoryPath);
+		directoryPaths.add(retrieveService.getDirectoryPath(AppConstants.FILE_PROCESSED)); 
 		
-		assertEquals("sample1.pjl", fileArray[0].getName());
-		assertEquals("sample2.pjl", fileArray[1].getName());
+		List<File> fileArray = retrieveService.retrievePJLFiles(directoryPaths);
+		
+		if (fileArray.size() > 0) {
+			assertEquals("sample1.pjl", fileArray.get(0).getName());
+			assertEquals("sample2.pjl", fileArray.get(1).getName());			
+		}
+	}
+
+	@Test
+	public void testGetFile() {
+		File file_1 = retrieveService.getFile("file1.pjl", java.util.Arrays.asList(firstFile, secondFile, thirdFile, fourthFile, fifthFile));
+		File file_2 = retrieveService.getFile("file2.pjl", java.util.Arrays.asList(firstFile, secondFile, thirdFile, fourthFile, fifthFile));
+		File file_3 = retrieveService.getFile("test_file.pjl", java.util.Arrays.asList(firstFile, secondFile, thirdFile, fourthFile, fifthFile));
+		
+		assertEquals("file1.pjl", file_1.getName());
+		assertEquals("file2.pjl", file_2.getName());
+		assertNull(file_3);
 	}
 }
