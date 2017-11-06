@@ -113,14 +113,26 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 
 				String sourceString = new String(buffer, StandardCharsets.UTF_8);
 
-				Pattern p = Pattern.compile("@PJL SET.*\n*");
+				Pattern p = Pattern.compile("@PJL " + appConfig.toString() + ".*\n*");
+
 				Matcher m = p.matcher(sourceString);
 
 				while (m.find()) {
-					String matched = m.group();
-
-					String header = matched.split("=")[0].split(" ")[2];
-					String value = matched.split("=")[1].replaceFirst("^\\s+", "").replaceAll("\"", "");
+					String matched = m.group();					
+					String header, value;
+					
+					if (matched.contains(appConfig.getPJLHeaderComment()) && !matched.contains(appConfig.getPJLHeaderCommentOther())) {
+						header = appConfig.getPJLHeaderComment();
+						value = matched.split(appConfig.getPJLHeaderComment())[1].trim();
+					} else {			
+						if (matched.contains(appConfig.getPJLHeaderCommentOther())) {
+							header = appConfig.getPJLHeaderCommentOther();
+						} else {
+							header = matched.split("=",2)[0].split(" ")[2];
+						}
+						
+						value = matched.split("=",2)[1].trim().replaceAll("\"", "");
+					}
 					
 					if (!multipleFiles) {
 						mappedHeader.put(header, value);											
@@ -171,13 +183,17 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 					fis.read(inputFileInBytes);
 
 					String sourceString = new String(inputFileInBytes, StandardCharsets.UTF_8);
-
+					
 					Pattern pattern = Pattern.compile(inputHeaderKey + ".*\n*");
 					Matcher match = pattern.matcher(sourceString);
 					String matched = "";
 
 					while (match.find()) {
 						matched = match.group();
+						
+						if (matched.contains(appConfig.getPJLHeaderComment()) && !matched.contains(appConfig.getPJLHeaderCommentOther())) {
+							break;
+						}
 					}
 
 					StringBuilder newStringValue = new StringBuilder();
@@ -187,8 +203,13 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 						start = matched.indexOf("\"");
 						end = matched.lastIndexOf("\"");
 					} else {
-						start = matched.indexOf("=") + 1;
-						end = matched.length();							
+						if (matched.contains("=")) {
+							start = matched.indexOf("=") + 1;
+							end = matched.length();							
+						} else {
+							start = matched.indexOf(appConfig.getPJLHeaderComment()) + appConfig.getPJLHeaderComment().length();
+							end = matched.length();
+						}
 					}
 
 					createOutputFileWithNewValue(inputHeaderNewValue, fop, inputFileInBytes, sourceString, matched, newStringValue,
@@ -208,7 +229,7 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 			String sourceString, String matched, StringBuilder newStringValue, int start, int end) throws IOException {
 		
 		newStringValue.append(matched.substring(0, start + 1));
-		newStringValue.append(inputHeaderNewValue);
+		newStringValue.append(inputHeaderNewValue.trim());
 		newStringValue.append(matched.substring(end, matched.length()));
 
 		int startIndex = sourceString.indexOf(matched);

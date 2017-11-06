@@ -15,4 +15,24 @@ public class ApplicationConfiguration {
     public String getUserDirectory() {
     		return env.getProperty("user.dir");
     }
+    
+    public String getPJLHeaderSet() {
+		return env.getProperty("pjl.header.set");
+    }
+
+    public String getPJLHeaderComment() {
+		return env.getProperty("pjl.header.comment");
+    }
+
+    public String getPJLHeaderCommentOther() {
+		return env.getProperty("pjl.header.comment.other");
+    }    
+
+    public String getPJLHeaderEnterLanguage() {
+		return env.getProperty("pjl.header.enter.language");
+    }        
+    
+    public String toString() {
+    	 	return "(" + getPJLHeaderSet() + "|" + getPJLHeaderComment() + "|" + getPJLHeaderCommentOther() + "|" + getPJLHeaderEnterLanguage() + ")";
+    }
 }
