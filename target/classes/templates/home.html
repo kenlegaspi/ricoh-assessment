@@ -9,6 +9,8 @@
 <link rel="stylesheet"
 	href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" />
 
+<link rel="stylesheet" href="main.css"/>
+
 </head>
 <body>
 	<div class="container-fluid">
@@ -18,12 +20,13 @@
 				<br /> <br />
 				<h2>Print Stream File Modifier on PJL Headers</h2>
 				<p class="text-secondary">Please click the button to check if pjl files exist in the directory</p>
+				
 				<button type="button" class="btn btn-primary" onclick="location.href='/checkDirectory'" name="btnCheckDirectory" id="btnCheckDirectory">Check Directory</button>
 				<br /> <br />
 				
-				<form action="#" th:action="@{/displayHeaders}" method="post">
-				<div th:if="${pjlFilesSelected != null}">
-				<table class="table table-striped" id="tableDisplay">
+				<form id="displayHeaders" action="#" th:action="@{/displayHeaders}" method="post">
+				<div th:if="${not #lists.isEmpty(pjlFilesSelected)}">
+				<table class="table table-striped table-hover">
 					<thead>
 					<tr>
 						<th>Files</th>
@@ -31,46 +34,86 @@
 					</thead>
 					<tbody>
 					<tr th:each="pjlFile: ${pjlFilesSelected}">
-						<td style="padding-left: 30px;">
+						<td style="padding-left: 30px;" >
 							<input class="form-check-input" type="checkbox" name="pjlFile" id="pjlFile" th:value="${pjlFile.id}" th:checked="${#strings.equals(pjlFile.value,'checked')}"/>
-							<label th:text="${pjlFile.id}" class="form-check-label"></label>						
+							<a th:href="@{/displayFileHeader?fileId=} + ${pjlFile.id}" data-toggle="tooltip" data-placement="right" data-type="primary" title="Click To Display Header Values">
+								<label id="ahref" th:text="${pjlFile.id}" class="form-check-label"></label>
+							</a>						
 						</td>
 					</tr>
-					<tr><td></td></tr>					
 					</tbody>					
-				</table>
-				
-				<button type="submit" class="btn btn-primary" onclick="location.href='/displayHeaders'" name="btnDisplayHeaders" id="btnDisplayHeaders">Display Headers</button>				
+				</table>				
+				<br/>
+				<button type="button" class="btn btn-primary" id="btnDisplayHeaders" data-toggle="popover" data-content="Select one or more files">Display Headers</button>
 				</div>
 				</form>
+				<br/>
 			</div>
-			<div class="col-sm-1"></div>
-			<form id="updateHeaders" action="#" th:action="@{/updateHeaders}" method="post">
-				<div class="col-sm-12" th:if="${mappedHeader != null}">
-					<br />
-					<h2 class="lead"></h2>
-					<br /> <br />
+			<div class="col-sm-4" style="padding-left: 80px;">
+				<form id="updateHeaders" action="#" th:action="@{/updateHeaders}"
+					method="post">
+					<div th:if="${mappedHeader != null}">
+						<br />
+						<h2 class="lead"></h2>
+						<br /> <br />
 
-					<div class="form-group">
-						<select class="form-control" id="pjlHeaders">
-							<option value="">Select Header</option>
-							<option th:each="item: ${mappedHeader}" th:value="${item['value']}" th:text="${item['key']}"></option>
-						</select>
+						<div class="form-group">
+							<select class="form-control" id="pjlHeaders">
+								<option value="">Select Header</option>
+								<option th:each="item: ${mappedHeader}" th:value="${item['value']}" th:text="${item['key']}"></option>
+							</select>
+						</div>
+						<br />
+						<div class="form-group">
+							<input type="text" class="form-control" id="inputHeaderNewValue" name="inputHeaderNewValue" /> 
+							<input type="hidden" class="form-control" id="inputHeaderKey" name="inputHeaderKey" value="" /> 
+							<input type="hidden" class="form-control" id="checkedAllFiles" name="checkedAllFiles" th:value="${fileId}" />
+							<!-- <input type="hidden" class="form-control" id="checkedFile" name="checkedFile" /> --> 
+							<input type="hidden" class="form-control" id="successValue" name="successValue" value="" />
+						</div>
+						<br />
+						<button type="button" class="btn btn-primary" id="btnUpdateHeaders">Update Headers</button>
+						<br /><br />
+						<div class="form-group">		
+							<br />					 
+							<div id='alertSuccess' th:if="${success != null}" class="alert alert-success alert-dismissable">
+								<button id="closeButton" type="button" class="close">&times;</button>
+								<strong><span class="text-success" id="successHeader" th:text="${success}"></span></strong><br/><br/>								
+								<span class="text-success">Download files at: </span><br/><br/>  
+								<span th:text="${outputPath}"></span>
+							</div>
+							<div id='alertError' class="alert alert-danger alert-dismissable" style="display:none">
+								<button id="closeButton" type="button" class="close">&times;</button>								
+								<span class="text-danger">Please select a header from the dropdown list</span>  
+							</div>
+						</div>
 					</div>
-					<br />
-					<div class="form-group">
-						<input type="text" class="form-control" id="inputHeaderNewValue" name="inputHeaderNewValue"/>
-						<input type="hidden" class="form-control" id="inputHeaderKey" name="inputHeaderKey" value=""/>
-						<input type="hidden" class="form-control" id="checkedBoxValue" name="checkedBoxValue" value=""/>
-						<input type="hidden" class="form-control" id="successValue" name="successValue" value=""/>
+				</form>
+			</div>
+			<div class="col-sm-2"></div>
+		</div>
+
+		<div class="modal fade" id="myModal">
+			<div class="modal-dialog modal-lg" >
+				<div class="modal-content">
+
+					<!-- Modal Header -->
+					<div class="modal-header">
+						<h4 class="modal-title">No Files Found</h4>
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
 					</div>
-					<br />
-					<button type="button" class="btn btn-primary" id="btnUpdateHeaders">Update Headers</button>
-					<br/><br/>					
-					<span class="text-danger" id="errorHeader"></span>					
-					<span class="text-success" id="successHeader" th:if="${success != null}" th:text="${success}"></span>
+
+					<!-- Modal body -->
+					<div class="modal-body text-danger" th:text="'Please upload input files in: ' + ${inputPath}"></div>
+
+					<!-- Modal footer -->
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary"
+							data-dismiss="modal">Close</button>
+					</div>
+
 				</div>
-			</form>
+			</div>
 		</div>
 	</div>
 
@@ -83,32 +126,92 @@
 <!-- Latest compiled JavaScript -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js"></script>
 
-<script>
+<script th:inline="javascript">
 	$(document).ready(function() {
+		$('#inputHeaderKey').val($(this).find('option:selected').text());
+
 		$('#pjlHeaders').on('change', function() {
-			$('#errorHeader').text('');
+			$('#filesLocation').text('');
 			$('#inputHeaderNewValue').val(this.value);
 			$('#inputHeaderKey').val($(this).find('option:selected').text());
+			$('#btnDisplayHeaders').popover('hide');
+			$('#alertError').hide();
+			$('#alertSuccess').hide();
 		})
+
+		$('.form-check-input').click(function() {
+			$('#btnDisplayHeaders').popover('hide');
+						
+			var count = $('.form-check-input:checked').length;		
+			if (count != 1){
+				$('#updateHeaders').hide();				
+			}			
+		});	
 		
+		$('.close').click(function() {
+			$('#alertError').hide();
+			$('#alertSuccess').hide();			
+		});
+		
+		
+		$("#btnDisplayHeaders").click(function() {
+			var pjlFileList = [];
+			$.each($("input[name='pjlFile']:checked"), function() {
+				pjlFileList.push($(this).val());
+			});
+			
+			if (pjlFileList.join() == '') {
+				$('#btnDisplayHeaders').popover('show');
+				$('.popover-body').css({'background-color' : 'white', 'color' : '#6666ff', 'font-weight' : 'bold'});
+				//$('.popover-header').css({'background-color' : '#ffffb3', 'color' : 'black'});				
+			} else {
+				$('#btnDisplayHeaders').remove();
+				$("#displayHeaders").submit();
+			}			
+		});
+				
 		$("#btnUpdateHeaders").click(function() {
 		var pjlFileList = [];
 		$.each($("input[name='pjlFile']:checked"), function() {
 			pjlFileList.push($(this).val());
 		});
 		
-		$('#checkedBoxValue').val(pjlFileList.join()); 
-		//alert("List of files are: " + pjlFileList.join());
+		if ($('#checkedAllFiles').val() == ''){
+			$('#checkedAllFiles').val(pjlFileList.join());
+		}
 		
-		if ($('#pjlHeaders').val() == ''){
-			$('#successHeader').text('');
-			$('#errorHeader').text('Please select a header from the dropdown list');
+		if ($('#inputHeaderKey').val() == 'Select Header'){
+			$('#filesLocation').text('');			
+			$('#alertError').show();
+			$('#alertSuccess').hide();
 		} else {
 			$('#successValue').val('Header Successfully Updated');
 			$("#updateHeaders").submit();			
 		}
 		}); 	
-	});
+		
+		var pjlFiles = [[${pjlFilesSelected}]];
+		
+		if (pjlFiles.length == 0){
+			$('#myModal').modal('show');
+		}
+ 
+		$('[data-toggle="tooltip"]').each(function(){
+		    var options = { 
+		    	html: true 
+		    };
+
+		    if ($(this)[0].hasAttribute('data-type')) {
+		        options['template'] = 
+		        	'<div class="tooltip ' + $(this).attr('data-type') + '" role="tooltip">' + 
+		        	'	<div class="tooltip-arrow"></div>' + 
+		        	'	<div class="tooltip-inner"></div>' + 
+		        	'</div>';
+		    }
+
+		    $(this).tooltip(options);
+		});
+ 	});
 </script>
 
 </body>

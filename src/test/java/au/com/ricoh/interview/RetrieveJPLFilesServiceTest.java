@@ -177,18 +177,19 @@ public class RetrieveJPLFilesServiceTest {
 		
 		if (files.size() > 0) {
 			files.get(0).setValue(AppConstants.CHECKED);
-			files.get(1).setValue(AppConstants.CHECKED);			
+			files.get(1).setValue(AppConstants.CHECKED);
+
+			retrieveService.updateHeaderValues("PUNCH", "ON", files);
+
+			files = retrieveService.updateCheckedFiles(Arrays.asList(files.get(0).getId(), files.get(1).getId()),
+					files);
+
+			retrieveService.updateHeaderValues("USERID", "GUEST 123", files);
+			retrieveService.updateHeaderValues("COPIES", "500", files);
+			retrieveService.updateHeaderValues("QTY", "3295", files);
+			retrieveService.updateHeaderValues("DUPLEX", "OFF", files);
 		}
-			
-		retrieveService.updateHeaderValues("PUNCH", "ON", files);		
 		
-		files = retrieveService.updateCheckedFiles(Arrays.asList(files.get(0).getId(), files.get(1).getId()), files);
-		
-		retrieveService.updateHeaderValues("USERID", "GUEST 123", files);				
-		retrieveService.updateHeaderValues("COPIES", "500", files);
-		retrieveService.updateHeaderValues("QTY", "3295", files);
-		retrieveService.updateHeaderValues("DUPLEX", "OFF", files);		
-				
 		String outputDirectoryPath = appConfig.getUserDirectory() + AppConstants.FILE_OUTPUTS;
 		List<File> fileOutputArray = retrieveService.retrievePJLFiles(java.util.Arrays.asList(outputDirectoryPath));
 		

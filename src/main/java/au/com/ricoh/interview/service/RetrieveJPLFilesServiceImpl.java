@@ -113,7 +113,7 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 
 				String sourceString = new String(buffer, StandardCharsets.UTF_8);
 
-				Pattern p = Pattern.compile("@PJL " + appConfig.toString() + ".*\n*");
+				Pattern p = Pattern.compile("@PJL " + new AppConstants().getHeaderConstants() + ".*\n*");
 
 				Matcher m = p.matcher(sourceString);
 
@@ -121,12 +121,12 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 					String matched = m.group();					
 					String header, value;
 					
-					if (matched.contains(appConfig.getPJLHeaderComment()) && !matched.contains(appConfig.getPJLHeaderCommentOther())) {
-						header = appConfig.getPJLHeaderComment();
-						value = matched.split(appConfig.getPJLHeaderComment())[1].trim();
+					if (matched.contains(AppConstants.COMMENT) && !matched.contains(AppConstants.COMMENT_OTHER)) {
+						header = AppConstants.COMMENT;
+						value = matched.split(AppConstants.COMMENT)[1].trim();
 					} else {			
-						if (matched.contains(appConfig.getPJLHeaderCommentOther())) {
-							header = appConfig.getPJLHeaderCommentOther();
+						if (matched.contains(AppConstants.COMMENT_OTHER)) {
+							header = AppConstants.COMMENT_OTHER;
 						} else {
 							header = matched.split("=",2)[0].split(" ")[2];
 						}
@@ -191,7 +191,7 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 					while (match.find()) {
 						matched = match.group();
 						
-						if (matched.contains(appConfig.getPJLHeaderComment()) && !matched.contains(appConfig.getPJLHeaderCommentOther())) {
+						if (matched.contains(AppConstants.COMMENT) && !matched.contains(AppConstants.COMMENT_OTHER)) {
 							break;
 						}
 					}
@@ -207,7 +207,7 @@ public class RetrieveJPLFilesServiceImpl implements RetrieveJPLFilesService {
 							start = matched.indexOf("=") + 1;
 							end = matched.length();							
 						} else {
-							start = matched.indexOf(appConfig.getPJLHeaderComment()) + appConfig.getPJLHeaderComment().length();
+							start = matched.indexOf(AppConstants.COMMENT) + AppConstants.COMMENT.length();
 							end = matched.length();
 						}
 					}
